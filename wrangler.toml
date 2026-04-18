@@ -1,0 +1,8 @@
+name = "maptiles-uploader"
+main = "cloudflare-worker.js"
+compatibility_date = "2023-12-01"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "maptiles"
+bucket_name = "maptiles"
