@@ -8,6 +8,7 @@ import { supabase } from '../services/supabaseClient';
 interface Club {
   id: string;
   club_name: string;
+  slug: string;
   created_at: string;
 }
 
@@ -45,6 +46,7 @@ const AdminManageClubs: React.FC = () => {
         .select(`
           id,
           club_name,
+          slug,
           created_at
         `);
       
@@ -61,6 +63,7 @@ const AdminManageClubs: React.FC = () => {
       const clubsWithCounts: ClubWithUserCount[] = clubsData.map((club: any) => ({
         id: club.id,
         club_name: club.club_name,
+        slug: club.slug,
         created_at: club.created_at,
         user_count: usersData.filter((user: Profile) => user.club_id === club.id).length
       }));
@@ -84,26 +87,33 @@ const AdminManageClubs: React.FC = () => {
     try {
       setSubmitting(true);
       
+      // Auto-generate slug from club name
+      const slug = newClubName
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+      
       // Check for duplicate club name
       const { data: existingClub } = await supabase
         .from('clubs')
         .select('id')
-        .eq('name', newClubName.trim())
+        .eq('club_name', newClubName.trim())
         .single();
       
       if (existingClub) {
-        showError('Error', 'A club with this name already exists');
+        showError('Error', 'A golf club with this name already exists');
         return;
       }
       
       // Create new club
       const { error } = await supabase
         .from('clubs')
-        .insert({ name: newClubName.trim() });
+        .insert({ club_name: newClubName.trim(), slug });
       
       if (error) throw error;
       
-      showSuccess('Success', 'Club created successfully');
+      showSuccess('Success', 'Golf club created successfully');
       setNewClubName('');
       fetchData();
     } catch (error) {
@@ -123,7 +133,7 @@ const AdminManageClubs: React.FC = () => {
       
       if (error) throw error;
       
-      showSuccess('Success', 'User assigned to club successfully');
+      showSuccess('Success', 'User assigned to golf club successfully');
       fetchData();
     } catch (error) {
       console.error('Error assigning user to club:', error);
@@ -147,20 +157,20 @@ const AdminManageClubs: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Manage Clubs</h1>
-        <p className="text-gray-600 mt-2">Create clubs and assign users to them</p>
+        <h1 className="text-3xl font-bold text-gray-900">Golf Club Management</h1>
+        <p className="text-gray-600 mt-2">Create golf clubs and assign users to them</p>
       </div>
 
-      {/* 1. CLUB MANAGEMENT TABLE */}
+      {/* 1. GOLF CLUB MANAGEMENT TABLE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Club Management</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Golf Club Management</h2>
         
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Club Name
+                  Golf Club Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Number of Users
@@ -191,19 +201,19 @@ const AdminManageClubs: React.FC = () => {
         {clubs.length === 0 && (
           <div className="text-center py-8">
             <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No clubs found</p>
+            <p className="text-gray-500">No golf clubs found</p>
           </div>
         )}
       </div>
 
-      {/* 2. CREATE NEW CLUB */}
+      {/* 2. CREATE NEW GOLF CLUB */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Club</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Golf Club</h2>
         
         <div className="flex gap-4">
           <input
             type="text"
-            placeholder="Enter club name"
+            placeholder="Enter golf club name"
             value={newClubName}
             onChange={(e) => setNewClubName(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -214,14 +224,14 @@ const AdminManageClubs: React.FC = () => {
             disabled={submitting}
             className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Creating...' : 'Create New Club'}
+            {submitting ? 'Creating...' : 'Create New Golf Club'}
           </button>
         </div>
       </div>
 
-      {/* 3. ASSIGN USERS TO CLUB */}
+      {/* 3. ASSIGN USERS TO GOLF CLUB */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Assign Users to Club</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Assign Users to Golf Club</h2>
         
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -234,10 +244,10 @@ const AdminManageClubs: React.FC = () => {
                   Email
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Current Club
+                  Current Golf Club
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assign to Club
+                  Assign to Golf Club
                 </th>
               </tr>
             </thead>
@@ -251,7 +261,7 @@ const AdminManageClubs: React.FC = () => {
                     {user.email}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {clubs.find(c => c.id === user.club_id)?.club_name || 'None'}
+                    {clubs.find(c => c.id === user.club_id)?.club_name || 'No golf club assigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
@@ -260,7 +270,7 @@ const AdminManageClubs: React.FC = () => {
                         onChange={(e) => assignUserToClub(user.id, e.target.value)}
                         className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border"
                       >
-                        <option value="">Select a club...</option>
+                        <option value="">Select a golf club...</option>
                         {clubs.map((club) => (
                           <option key={club.id} value={club.id}>
                             {club.club_name}

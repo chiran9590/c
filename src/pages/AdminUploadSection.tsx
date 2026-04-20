@@ -7,6 +7,7 @@ import { cloudflareR2Service, UploadProgress, UploadOptions, BatchUploadOptions 
 interface Club {
   id: string;
   club_name: string;
+  slug: string;
   created_at: string;
 }
 
@@ -35,7 +36,7 @@ const AdminUploadSection: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('clubs')
-        .select('id, club_name, created_at')
+        .select('id, club_name, slug, created_at')
         .order('club_name');
 
       if (error) throw error;
@@ -166,13 +167,13 @@ const AdminUploadSection: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Upload Section</h1>
-        <p className="text-gray-600 mt-2">Upload metadata and tiles to Cloudflare R2 storage</p>
+        <h1 className="text-3xl font-bold text-gray-900">Upload Tiles</h1>
+        <p className="text-gray-600 mt-2">Upload PNG map tiles for a golf club to Cloudflare R2 storage</p>
       </div>
 
-      {/* 1. SELECT CLUB */}
+      {/* 1. SELECT GOLF CLUB */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Club</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Golf Club</h2>
         
         <div className="flex items-center">
           <select
@@ -180,7 +181,7 @@ const AdminUploadSection: React.FC = () => {
             onChange={(e) => setSelectedClub(e.target.value)}
             className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border"
           >
-            <option value="">Select a club...</option>
+            <option value="">Select a golf club...</option>
             {clubs.map((club) => (
               <option key={club.id} value={club.club_name}>
                 {club.club_name}
@@ -240,7 +241,7 @@ const AdminUploadSection: React.FC = () => {
 
       {/* 3. TILES UPLOAD */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Tiles Upload (Folder)</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Tiles (Folder)</h2>
         
         <div className="space-y-4">
           <div>

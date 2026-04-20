@@ -27,17 +27,17 @@ const AdminDashboard: React.FC = () => {
       icon: LayoutDashboard,
     },
     {
-      name: 'Manage Users',
+      name: 'User Management',
       href: '/admin/users',
       icon: Users,
     },
     {
-      name: 'Manage Clubs',
+      name: 'Golf Club Management',
       href: '/admin/clubs',
       icon: Building,
     },
     {
-      name: 'Upload Section',
+      name: 'Upload Tiles',
       href: '/admin/upload',
       icon: Upload,
     },
@@ -137,7 +137,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="hidden md:block text-left">
                     <p className="text-sm font-medium text-gray-900">
-                      {profile?.full_name || 'Admin User'}
+                      {profile?.name || 'Admin User'}
                     </p>
                     <p className="text-xs text-gray-500">Administrator</p>
                   </div>

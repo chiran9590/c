@@ -54,13 +54,8 @@ const Register = () => {
     }
 
     // Password validation
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return false;
-    }
-
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return false;
     }
 
@@ -70,9 +65,9 @@ const Register = () => {
       return false;
     }
 
-    // Phone validation (optional but if provided, must be valid)
-    if (phone && !/^\+?[\d\s\-\(\)]+$/.test(phone)) {
-      setError('Please enter a valid phone number');
+    // Phone validation (7-15 digits)
+    if (!phone || !/^\d{7,15}$/.test(phone.replace(/\D/g, ''))) {
+      setError('Phone number must be 7-15 digits');
       return false;
     }
 
@@ -211,7 +206,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Phone Number *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -222,7 +217,8 @@ const Register = () => {
                   name="phone"
                   type="tel"
                   className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition duration-200"
-                  placeholder="+91-XXXXXXXXXX"
+                  placeholder="1234567890"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -266,7 +262,7 @@ const Register = () => {
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition duration-200"
-                  placeholder="Create a strong password (min 8 chars)"
+                  placeholder="Create a password (min 6 chars)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -301,7 +297,7 @@ const Register = () => {
                 </div>
               )}
               
-              <p className="text-xs text-gray-500 mt-1">Must contain uppercase, lowercase, and numbers</p>
+              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
             </div>
 
             <div>

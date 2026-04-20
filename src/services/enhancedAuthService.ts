@@ -3,7 +3,8 @@ import { User } from '@supabase/supabase-js';
 
 export interface Profile {
   id: string;
-  full_name: string;
+  name: string;
+  email: string;
   phone_number: string;
   role: string;
   created_at: string;
@@ -92,7 +93,7 @@ class AuthService {
       
       // Step 3: Verify profile was created
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', data.user.id)
         .single();
@@ -101,12 +102,13 @@ class AuthService {
         console.log('⚠️ Profile not found, creating manually...');
         // Manual profile creation as fallback
         const { error: manualError } = await supabase
-          .from('profiles')
+          .from('users')
           .insert([
             {
               id: data.user.id,
-              full_name: fullName,
+              name: fullName,
               phone_number: phone_number,
+              email: email,
               role: role,
             }
           ]);
@@ -122,7 +124,7 @@ class AuthService {
         
         // Fetch the manually created profile
         const { data: newProfile } = await supabase
-          .from('profiles')
+          .from('users')
           .select('*')
           .eq('id', data.user.id)
           .single();
@@ -183,7 +185,7 @@ class AuthService {
 
       // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', data.user.id)
         .single();
@@ -232,7 +234,7 @@ class AuthService {
 
       // Fetch user profile and verify admin role
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', data.user.id)
         .single();
@@ -295,7 +297,7 @@ class AuthService {
   async updateProfile(userId: string, updates: Partial<Profile>): Promise<{ error: string | null }> {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update(updates)
         .eq('id', userId);
 
@@ -309,7 +311,7 @@ class AuthService {
   async getProfile(userId: string): Promise<{ profile: Profile | null; error: string | null }> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single();
@@ -329,7 +331,7 @@ class AuthService {
   async getAllUsers(): Promise<{ users: Profile[]; error: string | null }> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -347,9 +349,9 @@ class AuthService {
 
   async deleteUser(userId: string): Promise<{ error: string | null }> {
     try {
-      // First delete from profiles (this will cascade to related tables)
+      // First delete from users (this will cascade to related tables)
       const { error: profileError } = await supabase
-        .from('profiles')
+        .from('users')
         .delete()
         .eq('id', userId);
 
@@ -379,7 +381,7 @@ class AuthService {
       }
 
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ role: newRole })
         .eq('id', userId);
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Leaf } from 'lucide-react';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -27,7 +26,7 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <div className={`${sizeClasses[size]} bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm`}>
-        <Leaf className="w-1/2 h-1/2 text-white" />
+        <span className="text-white font-bold text-lg">⛳</span>
       </div>
       {showText && (
         <span className={`${textSizes[size]} font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent`}>

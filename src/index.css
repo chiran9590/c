@@ -4,6 +4,19 @@
 
 /* Custom styles */
 
+/* Golf-themed green tint for auth panel */
+.auth-panel-left {
+  background: linear-gradient(145deg, #071a10 0%, #0a1a28 100%);
+}
+
+.auth-panel-left::before {
+  background: radial-gradient(circle, rgba(0,201,167,0.30), transparent 70%);
+}
+
+.auth-panel-left::after {
+  background: radial-gradient(circle, rgba(0,201,167,0.10), transparent 70%);
+}
+
 /* Custom form styles */
 input[type="text"],
 input[type="email"],

@@ -113,11 +113,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (userResponse.data?.user) {
         const insertResult = supabase
-          .from('profiles')
+          .from('users')
           .insert([
             {
               id: userResponse.data.user.id,
-              full_name: userResponse.data.user.user_metadata?.full_name || 'Unknown User',
+              name: userResponse.data.user.user_metadata?.name || 'Unknown User',
+              email: userResponse.data.user.email,
               phone_number: '',
               role: userResponse.data.user.user_metadata?.role || 'client',
             }
