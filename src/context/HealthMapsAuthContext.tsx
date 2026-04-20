@@ -12,7 +12,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error: string | null }>;
-  register: (data: { name: string; email: string; phone?: string; password: string; role?: 'admin' | 'client' }) => Promise<{ success: boolean; error: string | null }>;
+  register: (data: { name: string; email: string; phone_number?: string; password: string }) => Promise<{ success: boolean; error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,30 +31,23 @@ export const HealthMapsAuthProvider: React.FC<AuthProviderProps> = ({ children }
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('🔍 Fetching profile for user:', userId);
       const { profile: userProfile, error } = await healthMapsAuthService.getProfile(userId);
       
       if (error) {
-        console.error('❌ Profile fetch error:', error);
         setProfile(null);
         setRole(null);
       } else if (userProfile) {
-        console.log('✅ Profile fetched successfully:', userProfile);
         setProfile(userProfile);
         setRole(userProfile.role);
         
-        // Validate role is either 'client' or 'admin'
         if (!['client', 'admin'].includes(userProfile.role)) {
-          console.warn('⚠️ Invalid role detected, defaulting to client');
           setRole('client');
         }
       } else {
-        console.warn('⚠️ Profile is null');
         setProfile(null);
         setRole(null);
       }
-    } catch (error) {
-      console.error('❌ Error fetching profile:', error);
+    } catch {
       setProfile(null);
       setRole(null);
     }
@@ -65,28 +58,21 @@ export const HealthMapsAuthProvider: React.FC<AuthProviderProps> = ({ children }
     
     const initializeAuth = async () => {
       try {
-        console.log('🚀 Initializing authentication...');
-        
-        // Get initial session
         const { session } = await healthMapsAuthService.getCurrentSession();
-        console.log('📱 Initial session:', session ? 'Found' : 'Not found');
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('👤 User found, fetching profile...');
           await fetchProfile(session.user.id);
         } else {
-          console.log('👤 No user in session');
           setProfile(null);
           setRole(null);
         }
         
         setInitialized(true);
         setLoading(false);
-      } catch (error) {
-        console.error('❌ Error initializing auth:', error);
+      } catch {
         setLoading(false);
         setInitialized(true);
       }
@@ -96,17 +82,13 @@ export const HealthMapsAuthProvider: React.FC<AuthProviderProps> = ({ children }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event, session?.user?.email);
-        
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('👤 User authenticated, fetching profile...');
           await fetchProfile(session.user.id);
         } else {
-          console.log('👤 User signed out');
           setProfile(null);
           setRole(null);
         }
@@ -122,28 +104,25 @@ export const HealthMapsAuthProvider: React.FC<AuthProviderProps> = ({ children }
 
   const signOut = async () => {
     try {
-      console.log('🚪 Signing out...');
       await healthMapsAuthService.signOut();
       setUser(null);
       setSession(null);
       setProfile(null);
       setRole(null);
-      console.log('✅ Signed out successfully');
-    } catch (error) {
-      console.error('❌ Error signing out:', error);
+    } catch {
+      // no-op
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      console.log('🔄 Refreshing profile...');
       await fetchProfile(user.id);
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await healthMapsAuthService.login({ email, password });
+      const { error } = await healthMapsAuthService.login({ email, password });
       
       if (error) {
         return { success: false, error };
@@ -155,16 +134,16 @@ export const HealthMapsAuthProvider: React.FC<AuthProviderProps> = ({ children }
     }
   };
 
-  const register = async (data: { name: string; email: string; phone?: string; password: string; role?: 'admin' | 'client' }) => {
+  const register = async (data: { name: string; email: string; phone_number?: string; password: string }) => {
     try {
-      const { data: authData, error } = await healthMapsAuthService.register(data);
+      const { error } = await healthMapsAuthService.register(data);
       
       if (error) {
         return { success: false, error };
       }
       
       return { success: true, error: null };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Registration failed' };
     }
   };

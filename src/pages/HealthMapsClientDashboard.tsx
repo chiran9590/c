@@ -1,217 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import { useHealthMapsAuth } from '../context/HealthMapsAuthContext';
 import { clubsService, Club } from '../services/clubsService';
-import { uploadService } from '../services/uploadService';
 import toast from 'react-hot-toast';
 
 const HealthMapsClientDashboard: React.FC = () => {
   const { user, profile, signOut } = useHealthMapsAuth();
-  const [clubs, setClubs] = useState<Club[]>([]);
+  const [assignedClub, setAssignedClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
-  const [uploads, setUploads] = useState<any[]>([]);
-  const [uploadsLoading, setUploadsLoading] = useState(false);
 
   useEffect(() => {
-    fetchUserClubs();
-  }, []);
+    const run = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-  const fetchUserClubs = async () => {
-    try {
-      const { clubs: userClubs, error } = await clubsService.getUserClubs();
-      
-      if (error) {
-        toast.error(error);
-      } else {
-        setClubs(userClubs || []);
-        if (userClubs && userClubs.length > 0) {
-          setSelectedClub(userClubs[0]);
+      try {
+        const { club, error } = await clubsService.getUserAssignedClub(user.id);
+        if (error) {
+          toast.error(error);
+        } else {
+          setAssignedClub(club);
         }
+      } catch {
+        toast.error('Failed to fetch your assigned golf club.');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      toast.error('Failed to fetch clubs');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (selectedClub) {
-      fetchClubUploads(selectedClub.id);
-    }
-  }, [selectedClub]);
-
-  const fetchClubUploads = async (clubId: string) => {
-    setUploadsLoading(true);
-    try {
-      const { uploads: clubUploads, error } = await uploadService.getClubUploads(clubId);
-      
-      if (error) {
-        toast.error(error);
-      } else {
-        setUploads(clubUploads || []);
-      }
-    } catch (error) {
-      toast.error('Failed to fetch uploads');
-    } finally {
-      setUploadsLoading(false);
-    }
-  };
+    run();
+  }, [user]);
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch {
+      toast.error('Failed to logout');
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#0c0f14] text-[#e8edf5]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-[#00c9a7]"></div>
+          <p className="mt-3 text-[#8fa3bf]">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Health Maps</h1>
-              <p className="text-gray-600">Welcome to your Golf Club Dashboard, {profile?.name}!</p>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Sign Out
-            </button>
+    <div className="min-h-screen bg-[#0c0f14] text-[#e8edf5]">
+      <header className="border-b border-[#1f2d3d] bg-[#131820]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
+          <div>
+            <h1 className="font-['Syne',sans-serif] text-3xl">Client Dashboard</h1>
+            <p className="text-sm text-[#8fa3bf]">Health Maps</p>
           </div>
+          <button
+            onClick={handleSignOut}
+            className="rounded-lg bg-[#ff4d6d] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Clubs Section */}
-            <div className="lg:col-span-1">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Your Golf Clubs
-                  </h3>
-                  
-                  {clubs.length === 0 ? (
-                    <p className="text-gray-500">You are not assigned to any golf clubs yet.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {clubs.map((club) => (
-                        <div
-                          key={club.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                            selectedClub?.id === club.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedClub(club)}
-                        >
-                          <h4 className="font-medium text-gray-900">{club.name}</h4>
-                          {club.description && (
-                            <p className="text-sm text-gray-600 mt-1">{club.description}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
+        <section className="rounded-xl border border-[#1f2d3d] bg-[#131820] p-6 md:col-span-2">
+          <h2 className="text-xl font-semibold">Assigned Golf Club</h2>
+          {assignedClub ? (
+            <div>
+              <p className="mt-4 text-2xl font-semibold text-[#00c9a7]">{assignedClub.club_name}</p>
+              <p className="mt-2 text-sm text-[#8fa3bf]">Slug: {assignedClub.slug}</p>
             </div>
+          ) : (
+            <div className="mt-4 rounded-lg border border-dashed border-[#1f2d3d] bg-[#1a2230] p-4 text-[#8fa3bf]">
+              Contact your administrator. No golf club is assigned to your account yet.
+            </div>
+          )}
+        </section>
 
-            {/* Uploads Section */}
-            <div className="lg:col-span-2">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    {selectedClub ? `${selectedClub.name} - Files` : 'Select a Golf Club'}
-                  </h3>
-                  
-                  {!selectedClub ? (
-                    <p className="text-gray-500">Please select a golf club to view files.</p>
-                  ) : uploadsLoading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-600">Loading files...</p>
-                    </div>
-                  ) : uploads.length === 0 ? (
-                    <p className="text-gray-500">No files uploaded for this club yet.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {uploads.map((upload) => (
-                        <div key={upload.id} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {upload.file_name}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Uploaded by {upload.profiles?.name} • {new Date(upload.created_at).toLocaleDateString()}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {(upload.file_size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-                            <div className="ml-4 flex-shrink-0">
-                              <a
-                                href={uploadService.getFileUrl(upload.file_path)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                              >
-                                View
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+        <section className="rounded-xl border border-[#1f2d3d] bg-[#131820] p-6">
+          <h2 className="text-xl font-semibold">Account</h2>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="text-[#8fa3bf]">Name</dt>
+              <dd>{profile?.name || '-'}</dd>
             </div>
-          </div>
-
-          {/* User Info Card */}
-          <div className="mt-6 bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Your Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="mt-1 text-sm text-gray-900">{profile?.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p className="mt-1 text-sm text-gray-900">{profile?.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Role</p>
-                  <p className="mt-1 text-sm text-gray-900 capitalize">{profile?.role}</p>
-                </div>
-                {profile?.phone && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Phone</p>
-                    <p className="mt-1 text-sm text-gray-900">{profile.phone}</p>
-                  </div>
-                )}
-              </div>
+            <div>
+              <dt className="text-[#8fa3bf]">Email</dt>
+              <dd>{profile?.email || '-'}</dd>
             </div>
-          </div>
-        </div>
+            <div>
+              <dt className="text-[#8fa3bf]">Phone</dt>
+              <dd>{profile?.phone_number || '-'}</dd>
+            </div>
+            <div>
+              <dt className="text-[#8fa3bf]">Role</dt>
+              <dd>
+                <span className="rounded-full bg-[#00c9a7]/15 px-2 py-1 text-xs text-[#00c9a7]">client</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
       </main>
     </div>
   );

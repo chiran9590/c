@@ -1,11 +1,10 @@
 import { supabase } from '../lib/supabase';
-import { User } from '@supabase/supabase-js';
 
 export interface Profile {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone_number?: string;
   role: 'admin' | 'client';
   created_at: string;
 }
@@ -13,9 +12,8 @@ export interface Profile {
 export interface RegisterData {
   name: string;
   email: string;
-  phone?: string;
+  phone_number?: string;
   password: string;
-  role?: 'admin' | 'client';
 }
 
 export interface LoginData {
@@ -24,7 +22,6 @@ export interface LoginData {
 }
 
 export class HealthMapsAuthService {
-  // Register new user
   async register(data: RegisterData) {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -33,8 +30,7 @@ export class HealthMapsAuthService {
         options: {
           data: {
             name: data.name,
-            phone: data.phone,
-            role: data.role || 'client'
+            phone_number: data.phone_number
           }
         }
       });
@@ -43,13 +39,31 @@ export class HealthMapsAuthService {
         return { error: authError.message, data: null };
       }
 
+      if (authData.user) {
+        const { error: userError } = await supabase
+          .from('users')
+          .upsert(
+            {
+              id: authData.user.id,
+              name: data.name,
+              email: data.email,
+              phone_number: data.phone_number ?? null,
+              role: 'client'
+            },
+            { onConflict: 'id' }
+          );
+
+        if (userError) {
+          return { error: userError.message, data: null };
+        }
+      }
+
       return { data: authData, error: null };
-    } catch (error) {
+    } catch {
       return { error: 'Registration failed', data: null };
     }
   }
 
-  // Login user
   async login(data: LoginData) {
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -62,16 +76,15 @@ export class HealthMapsAuthService {
       }
 
       return { data: authData, error: null };
-    } catch (error) {
+    } catch {
       return { error: 'Login failed', data: null };
     }
   }
 
-  // Get user profile
   async getProfile(userId: string): Promise<{ profile: Profile | null; error: string | null }> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single();
@@ -81,16 +94,15 @@ export class HealthMapsAuthService {
       }
 
       return { profile: data as Profile, error: null };
-    } catch (error) {
+    } catch {
       return { profile: null, error: 'Failed to fetch profile' };
     }
   }
 
-  // Update user profile
   async updateProfile(userId: string, updates: Partial<Profile>) {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .update(updates)
         .eq('id', userId)
         .select()
@@ -101,16 +113,15 @@ export class HealthMapsAuthService {
       }
 
       return { data, error: null };
-    } catch (error) {
+    } catch {
       return { error: 'Failed to update profile', data: null };
     }
   }
 
-  // Get all users (admin only)
   async getAllUsers(): Promise<{ users: Profile[] | null; error: string | null }> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -119,37 +130,34 @@ export class HealthMapsAuthService {
       }
 
       return { users: data as Profile[], error: null };
-    } catch (error) {
+    } catch {
       return { users: null, error: 'Failed to fetch users' };
     }
   }
 
-  // Sign out
   async signOut() {
     try {
       const { error } = await supabase.auth.signOut();
       return { error: error?.message || null };
-    } catch (error) {
+    } catch {
       return { error: 'Sign out failed' };
     }
   }
 
-  // Get current session
   async getCurrentSession() {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       return { session, error: error?.message || null };
-    } catch (error) {
+    } catch {
       return { session: null, error: 'Failed to get session' };
     }
   }
 
-  // Reset password
   async resetPassword(email: string) {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       return { error: error?.message || null };
-    } catch (error) {
+    } catch {
       return { error: 'Password reset failed' };
     }
   }

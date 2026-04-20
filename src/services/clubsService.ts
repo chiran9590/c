@@ -2,52 +2,45 @@ import { supabase } from '../lib/supabase';
 
 export interface Club {
   id: string;
-  name: string;
-  description?: string;
-  created_by: string;
+  club_name: string;
+  slug: string;
   created_at: string;
 }
 
-export interface ClubMember {
+export interface ClubAssignment {
   id: string;
   user_id: string;
   club_id: string;
-  role: string;
-  joined_at: string;
-  profiles?: {
+  assigned_at: string;
+  users?: {
     name: string;
     email: string;
     role: string;
   };
+  clubs?: {
+    club_name: string;
+    slug: string;
+  };
 }
 
 export interface CreateClubData {
-  name: string;
-  description?: string;
+  club_name: string;
+  slug: string;
 }
 
 export interface AssignUserToClubData {
   user_id: string;
   club_id: string;
-  role?: string;
 }
 
 export class ClubsService {
-  // Create new club
   async createClub(clubData: CreateClubData): Promise<{ club: Club | null; error: string | null }> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return { club: null, error: 'User not authenticated' };
-      }
-
       const { data: clubResult, error } = await supabase
         .from('clubs')
         .insert([{
-          name: clubData.name,
-          description: clubData.description,
-          created_by: user.id
+          club_name: clubData.club_name,
+          slug: clubData.slug
         }])
         .select()
         .single();
@@ -57,12 +50,11 @@ export class ClubsService {
       }
 
       return { club: clubResult as Club, error: null };
-    } catch (error) {
+    } catch {
       return { club: null, error: 'Failed to create club' };
     }
   }
 
-  // Get all clubs
   async getAllClubs(): Promise<{ clubs: Club[] | null; error: string | null }> {
     try {
       const { data, error } = await supabase
@@ -75,143 +67,100 @@ export class ClubsService {
       }
 
       return { clubs: data as Club[], error: null };
-    } catch (error) {
+    } catch {
       return { clubs: null, error: 'Failed to fetch clubs' };
     }
   }
 
-  // Get clubs for current user
-  async getUserClubs(): Promise<{ clubs: Club[] | null; error: string | null }> {
+  async getUserAssignedClub(userId: string): Promise<{ club: Club | null; error: string | null }> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return { clubs: null, error: 'User not authenticated' };
-      }
-
-      const { data: membershipData, error } = await supabase
-        .from('club_members')
+      const { data, error } = await supabase
+        .from('user_club_mapping')
         .select(`
+          club_id,
           clubs (
             id,
-            name,
-            description,
-            created_by,
+            club_name,
+            slug,
             created_at
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', userId)
+        .maybeSingle();
 
       if (error) {
-        return { clubs: null, error: error.message };
+        return { club: null, error: error.message };
       }
 
-      const clubs = membershipData?.map((item: any) => item.clubs).filter(Boolean) || [];
-      return { clubs: clubs as Club[], error: null };
-    } catch (error) {
-      return { clubs: null, error: 'Failed to fetch user clubs' };
+      const clubData = Array.isArray(data?.clubs) ? data?.clubs[0] : data?.clubs;
+      return { club: (clubData as Club) ?? null, error: null };
+    } catch {
+      return { club: null, error: 'Failed to fetch assigned club' };
     }
   }
 
-  // Assign user to club
   async assignUserToClub(data: AssignUserToClubData): Promise<{ success: boolean; error: string | null }> {
     try {
       const { error } = await supabase
-        .from('club_members')
-        .insert([{
+        .from('user_club_mapping')
+        .upsert([{
           user_id: data.user_id,
-          club_id: data.club_id,
-          role: data.role || 'member'
-        }]);
+          club_id: data.club_id
+        }], { onConflict: 'user_id' });
 
       if (error) {
         return { success: false, error: error.message };
       }
 
       return { success: true, error: null };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Failed to assign user to club' };
     }
   }
 
-  // Remove user from club
-  async removeUserFromClub(userId: string, clubId: string): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('club_members')
-        .delete()
-        .eq('user_id', userId)
-        .eq('club_id', clubId);
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error) {
-      return { success: false, error: 'Failed to remove user from club' };
-    }
-  }
-
-  // Get club members
-  async getClubMembers(clubId: string): Promise<{ members: ClubMember[] | null; error: string | null }> {
+  async getAssignments(): Promise<{ assignments: ClubAssignment[] | null; error: string | null }> {
     try {
       const { data, error } = await supabase
-        .from('club_members')
+        .from('user_club_mapping')
         .select(`
           *,
-          profiles (
+          users (
             name,
             email,
             role
+          ),
+          clubs (
+            club_name,
+            slug
           )
         `)
-        .eq('club_id', clubId)
-        .order('joined_at', { ascending: false });
+        .order('assigned_at', { ascending: false });
 
       if (error) {
-        return { members: null, error: error.message };
+        return { assignments: null, error: error.message };
       }
 
-      return { members: data as ClubMember[], error: null };
-    } catch (error) {
-      return { members: null, error: 'Failed to fetch club members' };
+      return { assignments: data as ClubAssignment[], error: null };
+    } catch {
+      return { assignments: null, error: 'Failed to fetch assignments' };
     }
   }
 
-  // Update club
-  async updateClub(clubId: string, updates: Partial<Club>): Promise<{ success: boolean; error: string | null }> {
+  async getClientUsers(): Promise<{ users: { id: string; name: string; email: string }[] | null; error: string | null }> {
     try {
-      const { error } = await supabase
-        .from('clubs')
-        .update(updates)
-        .eq('id', clubId);
+      const { data, error } = await supabase
+        .from('users')
+        .select('id,name,email')
+        .eq('role', 'client')
+        .order('name', { ascending: true });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { users: null, error: error.message };
       }
 
-      return { success: true, error: null };
-    } catch (error) {
-      return { success: false, error: 'Failed to update club' };
-    }
-  }
-
-  // Delete club
-  async deleteClub(clubId: string): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('clubs')
-        .delete()
-        .eq('id', clubId);
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error) {
-      return { success: false, error: 'Failed to delete club' };
+      return { users: data, error: null };
+    } catch {
+      return { users: null, error: 'Failed to fetch clients' };
     }
   }
 }

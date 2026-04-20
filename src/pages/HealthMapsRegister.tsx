@@ -7,10 +7,9 @@ const HealthMapsRegister: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone_number: '',
     password: '',
-    confirmPassword: '',
-    role: 'client' as 'admin' | 'client'
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const { register } = useHealthMapsAuth();
@@ -23,39 +22,53 @@ const HealthMapsRegister: React.FC = () => {
     });
   };
 
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phonePattern = /^\d{7,15}$/;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    // Validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone_number.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
+      toast.error('All fields are required.');
+      return;
+    }
+
+    if (!emailPattern.test(formData.email.trim())) {
+      toast.error('Enter a valid email address.');
+      return;
+    }
+
+    if (!phonePattern.test(formData.phone_number.trim())) {
+      toast.error('Phone number must be 7 to 15 digits.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      setLoading(false);
+      toast.error('Confirm password must match.');
       return;
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      setLoading(false);
+      toast.error('Password must be at least 6 characters.');
       return;
     }
 
+    setLoading(true);
     try {
       const { success, error } = await register({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || undefined,
-        password: formData.password,
-        role: formData.role
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone_number: formData.phone_number.trim(),
+        password: formData.password
       });
       
       if (success) {
-        toast.success('Registration successful! Please check your email to verify your account.');
-        navigate('/login');
+        toast.success('Registration successful');
+        navigate('/dashboard');
       } else {
         toast.error(error || 'Registration failed');
       }
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -63,131 +76,112 @@ const HealthMapsRegister: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create Health Maps Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              sign in to your existing account
-            </Link>
+    <div className="min-h-screen bg-[#0c0f14] text-[#e8edf5]">
+      <div className="mx-auto flex min-h-screen max-w-7xl">
+        <section className="hidden w-1/2 flex-col justify-center border-r border-[#1f2d3d] bg-[#131820] px-12 lg:flex">
+          <p className="mb-4 text-sm uppercase tracking-[0.2em] text-[#00c9a7]">Health Maps</p>
+          <h1 className="font-['Syne',sans-serif] text-5xl leading-tight">
+            Register as a client and get assigned by admin.
+          </h1>
+          <p className="mt-6 max-w-md text-[#8fa3bf]">
+            Your dashboard appears immediately after signup. Club assignment is handled by administrator.
           </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
+        </section>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
+        <section className="flex w-full items-center justify-center px-6 py-10 lg:w-1/2">
+          <div className="w-full max-w-md rounded-xl border border-[#1f2d3d] bg-[#131820] p-8 shadow-2xl">
+            <h2 className="font-['Syne',sans-serif] text-3xl">Create account</h2>
+            <p className="mt-2 text-sm text-[#8fa3bf]">Client registration</p>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number (Optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your phone number"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="name" className="mb-1 block text-sm text-[#8fa3bf]">Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  className="w-full rounded-lg border border-[#1f2d3d] bg-[#0c0f14] px-3 py-2 text-[#e8edf5] outline-none ring-[#00c9a7] placeholder:text-[#4d6278] focus:ring-2"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Account Type
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              <div>
+                <label htmlFor="email" className="mb-1 block text-sm text-[#8fa3bf]">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="w-full rounded-lg border border-[#1f2d3d] bg-[#0c0f14] px-3 py-2 text-[#e8edf5] outline-none ring-[#00c9a7] placeholder:text-[#4d6278] focus:ring-2"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phone_number" className="mb-1 block text-sm text-[#8fa3bf]">Phone Number</label>
+                <input
+                  id="phone_number"
+                  name="phone_number"
+                  type="tel"
+                  required
+                  className="w-full rounded-lg border border-[#1f2d3d] bg-[#0c0f14] px-3 py-2 text-[#e8edf5] outline-none ring-[#00c9a7] placeholder:text-[#4d6278] focus:ring-2"
+                  placeholder="Digits only"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1 block text-sm text-[#8fa3bf]">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full rounded-lg border border-[#1f2d3d] bg-[#0c0f14] px-3 py-2 text-[#e8edf5] outline-none ring-[#00c9a7] placeholder:text-[#4d6278] focus:ring-2"
+                  placeholder="Minimum 6 characters"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="mb-1 block text-sm text-[#8fa3bf]">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  className="w-full rounded-lg border border-[#1f2d3d] bg-[#0c0f14] px-3 py-2 text-[#e8edf5] outline-none ring-[#00c9a7] placeholder:text-[#4d6278] focus:ring-2"
+                  placeholder="Re-enter password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 w-full rounded-lg bg-[#00c9a7] px-4 py-2 font-medium text-[#0c0f14] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <option value="client">Client</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+                {loading ? 'Creating account...' : 'Register'}
+              </button>
+            </form>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
+            <p className="mt-6 text-sm text-[#8fa3bf]">
+              Already registered?{' '}
+              <Link to="/login" className="text-[#00c9a7] hover:underline">
+                Login
+              </Link>
+            </p>
           </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
-        </form>
+        </section>
       </div>
     </div>
   );

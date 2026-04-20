@@ -1,8 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Custom styles */
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #0c0f14;
+  color: #e8edf5;
+}
 
 /* Golf-themed green tint for auth panel */
 .auth-panel-left {
